@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpecTrack — Dependency Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:ital,wght@0,300..700;1,300..700&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&family=Tektur:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07070e;
+  --bg-alt: #0c0c18;
+  --bg-card: rgba(255,255,255,0.028);
+  --bg-card-hover: rgba(255,255,255,0.045);
+  --border: rgba(255,255,255,0.07);
+  --border-focus: rgba(99,102,241,0.4);
+  --text: #e2e8f0;
+  --text-dim: #7b8499;
+  --text-muted: #525a75;
+  --cyan: #22d3ee;
+  --indigo: #6366f1;
+  --emerald: #34d399;
+  --amber: #fbbf24;
+  --rose: #fb7185;
+  --spectrum-1: #6366f1;
+  --spectrum-2: #22d3ee;
+  --spectrum-3: #34d399;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --font-display: 'Tektur', sans-serif;
+  --font-body: 'Epilogue', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+::selection { background: rgba(99,102,241,0.3); color: #fff; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ── background grain ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── spectrum bar ── */
+.spectrum-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--spectrum-1), var(--spectrum-2), var(--spectrum-3), var(--spectrum-2), var(--spectrum-1));
+  background-size: 200% 100%;
+  animation: spectrum-sweep 6s ease-in-out infinite;
+  z-index: 100;
+}
+@keyframes spectrum-sweep {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ── grid bg ── */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── layout ── */
+.page { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 0 24px 80px; }
+
+/* ── hero ── */
+.hero {
+  padding: 80px 0 56px;
+  text-align: center;
+  position: relative;
+}
+.hero-glow {
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 400px;
+  background: radial-gradient(ellipse, rgba(99,102,241,0.12) 0%, rgba(34,211,238,0.06) 40%, transparent 70%);
+  pointer-events: none;
+}
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 24px;
+  font-family: var(--font-display);
+}
+.hero-label span {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--emerald);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px var(--emerald); }
+  50% { opacity: 0.4; box-shadow: 0 0 8px var(--emerald); }
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+}
+.hero h1 .accent {
+  background: linear-gradient(135deg, var(--spectrum-1), var(--spectrum-2), var(--spectrum-3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero p {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  max-width: 600px;
+  margin: 0 auto 32px;
+  line-height: 1.7;
+}
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 28px;
+  border-radius: var(--radius);
+  border: none;
+  background: linear-gradient(135deg, var(--spectrum-1), var(--spectrum-2));
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.3s;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.hero-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(99,102,241,0.3);
+}
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  margin-top: 40px;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  text-align: center;
+}
+.hero-stat-num {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.hero-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── section ── */
+.section {
+  margin-top: 16px;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.section-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  letter-spacing: 0.01em;
+}
+.section-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+/* ── card ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  transition: border-color 0.25s, background 0.25s;
+}
+.card:focus-within {
+  border-color: var(--border-focus);
+}
+
+/* ── tools row ── */
+.tool-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tool-row .input-wrap {
+  flex: 1;
+  min-width: 260px;
+  position: relative;
+}
+.tool-row .input-wrap svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+.tool-row input[type="url"],
+.tool-row input[type="text"] {
+  width: 100%;
+  padding: 11px 14px 11px 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.25s, background 0.25s;
+}
+.tool-row input:focus {
+  border-color: var(--border-focus);
+  background: rgba(255,255,255,0.07);
+}
+.tool-row input::placeholder { color: var(--text-muted); }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.25s, opacity 0.25s;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--spectrum-1), var(--spectrum-2));
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(99,102,241,0.25); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.15); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── config panel ── */
+.config-toggle {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s;
+  border: none;
+  background: none;
+  padding: 4px 0;
+  font-family: var(--font-body);
+}
+.config-toggle:hover { color: var(--text); }
+.config-toggle svg { width: 15px; height: 15px; transition: transform 0.3s; }
+.config-toggle.open svg { transform: rotate(180deg); }
+
+.config-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-top: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, margin-top 0.4s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+.config-panel.open {
+  max-height: 400px;
+  margin-top: 16px;
+  opacity: 1;
+}
+.config-field { display: flex; flex-direction: column; gap: 5px; }
+.config-field.full { grid-column: 1 / -1; }
+.config-field label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+}
+.config-field input,
+.config-field select,
+.config-field textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.25s;
+}
+.config-field input:focus,
+.config-field select:focus,
+.config-field textarea:focus {
+  border-color: var(--border-focus);
+}
+.config-field select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b8499' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+.config-field textarea {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  resize: vertical;
+  min-height: 50px;
+}
+
+/* ── status / console ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  min-height: 0;
+  transition: all 0.4s ease;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+}
+.status-bar.visible {
+  max-height: 200px;
+  opacity: 1;
+}
+.status-bar.idle { background: rgba(255,255,255,0.03); color: var(--text-dim); border: 1px solid var(--border); }
+.status-bar.loading { background: rgba(99,102,241,0.08); color: var(--cyan); border: 1px solid rgba(99,102,241,0.2); }
+.status-bar.success { background: rgba(52,211,153,0.08); color: var(--emerald); border: 1px solid rgba(52,211,153,0.2); }
+.status-bar.error { background: rgba(251,113,133,0.08); color: var(--rose); border: 1px solid rgba(251,113,133,0.2); }
+.status-spinner { width: 14px; height: 14px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.status-dot.success { background: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
+.status-dot.error { background: var(--rose); box-shadow: 0 0 6px var(--rose); }
+.status-dot.idle { background: var(--text-muted); }
+.status-text { flex: 1; }
+.status-close {
+  background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 2px; line-height: 1; opacity: 0.6; transition: opacity 0.2s;
+}
+.status-close:hover { opacity: 1; }
+
+/* ── console overlay ── */
+.console-wrap {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+.console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+.console-header-actions { display: flex; gap: 8px; }
+.console-header-actions button {
+  background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; transition: color 0.2s, background 0.2s;
+}
+.console-header-actions button:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+#consoleLog {
+  padding: 12px 14px;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-dim);
+  background: rgba(0,0,0,0.15);
+  min-height: 40px;
+}
+#consoleLog .ts { color: var(--text-muted); }
+#consoleLog .ok { color: var(--emerald); }
+#consoleLog .err { color: var(--rose); }
+#consoleLog .info { color: var(--cyan); }
+#consoleLog .warn { color: var(--amber); }
+
+/* ── result ── */
+.result-area {
+  margin-top: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.6s ease, margin-top 0.6s ease;
+}
+.result-area.visible {
+  max-height: 2000px;
+  margin-top: 20px;
+}
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.result-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.result-card:hover { transform: translateY(-2px); }
+.result-card.breaking { border-color: rgba(251,113,133,0.2); background: rgba(251,113,133,0.04); }
+.result-card.breaking:hover { border-color: rgba(251,113,133,0.35); }
+.result-card.features { border-color: rgba(52,211,153,0.2); background: rgba(52,211,153,0.04); }
+.result-card.features:hover { border-color: rgba(52,211,153,0.35); }
+.result-card.deprecations { border-color: rgba(251,191,36,0.2); background: rgba(251,191,36,0.04); }
+.result-card.deprecations:hover { border-color: rgba(251,191,36,0.35); }
+.result-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.result-card-header .icon {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem;
+}
+.result-card.breaking .icon { background: rgba(251,113,133,0.15); color: var(--rose); }
+.result-card.features .icon { background: rgba(52,211,153,0.15); color: var(--emerald); }
+.result-card.deprecations .icon { background: rgba(251,191,36,0.15); color: var(--amber); }
+.result-card-header h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.result-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.result-card ul li {
+  position: relative;
+  padding-left: 14px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+.result-card ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+.result-card.breaking ul li::before { background: var(--rose); }
+.result-card.features ul li::before { background: var(--emerald); }
+.result-card.deprecations ul li::before { background: var(--amber); }
+.result-card .empty-state {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* ── result meta ── */
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.02);
+}
+.result-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+.result-meta-item strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── history ── */
+#historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+#historyTable thead th {
+  text-align: left;
+  padding: 10px 12px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+#historyTable tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  vertical-align: top;
+}
+#historyTable tbody tr {
+  transition: background 0.2s;
+}
+#historyTable tbody tr:hover { background: rgba(255,255,255,0.02); }
+#historyTable tbody a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+#historyTable tbody a:hover { text-decoration: underline; }
+#historyTable tbody ul {
+  list-style: none;
+  margin: 0; padding: 0;
+}
+#historyTable tbody ul li {
+  position: relative;
+  padding-left: 12px;
+  margin-bottom: 3px;
+  font-size: 0.78rem;
+}
+#historyTable tbody ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+#historyTable .empty-row td {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 24px 12px;
+}
+
+/* ── badge ── */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-breaking { background: rgba(251,113,133,0.12); color: var(--rose); }
+.badge-features { background: rgba(52,211,153,0.12); color: var(--emerald); }
+.badge-deprecations { background: rgba(251,191,36,0.12); color: var(--amber); }
+.badge-provider { background: rgba(99,102,241,0.1); color: var(--indigo); }
+
+/* ── footer ── */
+.footer {
+  margin-top: 64px;
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer a { color: var(--text-dim); text-decoration: none; }
+.footer a:hover { color: var(--text); }
+
+/* ── animations ── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.5s ease forwards; }
+.fade-up-d1 { animation-delay: 0.1s; }
+.fade-up-d2 { animation-delay: 0.2s; }
+.fade-up-d3 { animation-delay: 0.3s; }
+.fade-up-d4 { animation-delay: 0.4s; }
+
+/* ── responsive ── */
+@media (max-width: 768px) {
+  .page { padding: 0 16px 48px; }
+  .hero { padding: 56px 0 40px; }
+  .hero h1 { font-size: clamp(2rem, 10vw, 3rem); }
+  .hero-stats { gap: 24px; }
+  .config-panel { grid-template-columns: 1fr; }
+  .result-grid { grid-template-columns: 1fr; }
+  .tool-row .input-wrap { min-width: 100%; }
+  .tool-row { flex-direction: column; }
+  .tool-row .btn { width: 100%; justify-content: center; }
+  #historyTable { font-size: 0.72rem; }
+  #historyTable thead th,
+  #historyTable tbody td { padding: 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="spectrum-bar"></div>
+<div class="grid-bg"></div>
+
+<div class="page">
+
+  <!-- ─── HERO ─── -->
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="hero-label fade-up"><span></span> MVP — v1.0.0</div>
+    <h1 class="fade-up fade-up-d1">Spec<span class="accent">Track</span></h1>
+    <p class="fade-up fade-up-d2">Point at any GitHub repository. We fetch the latest release,<br>analyze the changes with AI, and tell you what <strong>broke</strong>, what <strong>arrived</strong>, and what <strong>left</strong>.</p>
+    <button class="hero-cta fade-up fade-up-d3" onclick="document.getElementById('trackSection').scrollIntoView({behavior:'smooth'})">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Start Tracking
+    </button>
+    <div class="hero-stats fade-up fade-up-d4">
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="statRepos">0</div>
+        <div class="hero-stat-label">Repositories Tracked</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="statReleases">0</div>
+        <div class="hero-stat-label">Releases Analyzed</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="statProviders">5</div>
+        <div class="hero-stat-label">AI Providers</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── TRACK ─── -->
+  <div id="trackSection" class="section">
+    <div class="section-header">
+      <h2>Track Repository</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="card">
+      <div class="tool-row">
+        <div class="input-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          <input type="url" id="githubUrl" placeholder="https://github.com/owner/repository" autocomplete="off" spellcheck="false">
+        </div>
+        <button id="trackBtn" class="btn btn-primary" onclick="trackRepository()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Track
+        </button>
+      </div>
+
+      <button class="config-toggle" id="configToggle" onclick="toggleConfig()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configuration
+        <span style="font-size:0.7rem;color:var(--text-muted);margin-left:auto">BYOK — Bring Your Own Key</span>
+      </button>
+
+      <div class="config-panel" id="configPanel">
+        <div class="config-field">
+          <label for="provider">AI Provider</label>
+          <select id="provider" onchange="onProviderChange()">
+            <option value="gemini">Gemini (Google)</option>
+            <option value="openai">OpenAI</option>
+            <option value="claude">Claude (Anthropic)</option>
+            <option value="openrouter">OpenRouter</option>
+            <option value="custom">Custom Endpoint</option>
+          </select>
+        </div>
+        <div class="config-field">
+          <label for="model">Model</label>
+          <input type="text" id="model" placeholder="gemini-1.5-flash">
+        </div>
+        <div class="config-field">
+          <label for="apiKey">API Key</label>
+          <input type="password" id="apiKey" placeholder="sk-... or your provider key">
+        </div>
+        <div class="config-field" id="customFields" style="display:none">
+          <label for="customUrl">Custom URL</label>
+          <input type="url" id="customUrl" placeholder="https://your-endpoint.com/v1/chat/completions">
+        </div>
+        <div class="config-field full" id="customHeadersField" style="display:none">
+          <label for="customHeaders">Custom Headers <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted)">(JSON)</span></label>
+          <textarea id="customHeaders" rows="1" placeholder='{"X-Custom-Header": "value"}'></textarea>
+        </div>
+      </div>
+
+      <div class="status-bar" id="statusBar">
+        <div class="status-spinner" id="statusSpinner" style="display:none"></div>
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Ready</span>
+        <button class="status-close" onclick="dismissStatus()">&times;</button>
+      </div>
+
+      <div class="console-wrap">
+        <div class="console-header">
+          <span>Event Log</span>
+          <div class="console-header-actions">
+            <button onclick="clearLog()">Clear</button>
+          </div>
+        </div>
+        <div id="consoleLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── RESULT ─── -->
+  <div class="result-area" id="resultArea">
+    <div class="section-header">
+      <h2>Analysis Report</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="result-grid">
+      <div class="result-card breaking" id="resultBreaking">
+        <div class="result-card-header">
+          <div class="icon">⬡</div>
+          <h3>Breaking Changes</h3>
+        </div>
+        <div id="breakingList"><span class="empty-state">None detected</span></div>
+      </div>
+      <div class="result-card features" id="resultFeatures">
+        <div class="result-card-header">
+          <div class="icon">+</div>
+          <h3>New Features</h3>
+        </div>
+        <div id="featuresList"><span class="empty-state">None detected</span></div>
+      </div>
+      <div class="result-card deprecations" id="resultDeprecations">
+        <div class="result-card-header">
+          <div class="icon">→</div>
+          <h3>Deprecations</h3>
+        </div>
+        <div id="deprecationsList"><span class="empty-state">None detected</span></div>
+      </div>
+    </div>
+    <div class="result-meta" id="resultMeta">
+      <div class="result-meta-item"><strong>Release:</strong> <span id="metaRelease">—</span></div>
+      <div class="result-meta-item"><strong>Provider:</strong> <span id="metaProvider">—</span></div>
+      <div class="result-meta-item"><strong>Published:</strong> <span id="metaPublished">—</span></div>
+      <div class="result-meta-item"><strong>Repository:</strong> <span id="metaRepo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ─── HISTORY ─── -->
+  <div class="section" style="margin-top:40px">
+    <div class="section-header">
+      <h2>History</h2>
+      <div class="section-line"></div>
+      <button class="btn btn-ghost" onclick="loadHistory()" style="padding:6px 14px;font-size:0.7rem">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Refresh
+      </button>
+    </div>
+    <div class="card" style="overflow-x:auto">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>Tracked At</th>
+            <th>Repository</th>
+            <th>Release</th>
+            <th>Provider</th>
+            <th>Breaking</th>
+            <th>New</th>
+            <th>Deprecated</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody">
+          <tr class="empty-row"><td colspan="7">No records yet. Track a repository above.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ─── FOOTER ─── -->
+  <div class="footer">
+    <span>SpecTrack v1.0.0 — Dependency Intelligence</span>
+    <span>
+      <a href="https://github.com" target="_blank">GitHub</a>
+      <span style="margin:0 8px;color:var(--border)">·</span>
+      <span>BYOK Architecture</span>
+    </span>
+  </div>
+
+</div>
+
+<script>
+const PROVIDER_DEFAULTS = {
+  gemini: 'gemini-1.5-flash',
+  openai: 'gpt-4o-mini',
+  claude: 'claude-haiku-4-5-20251001',
+  openrouter: 'google/gemini-flash-1.5',
+  custom: ''
+};
+
+const $ = id => document.getElementById(id);
+const CONSOLE = $('consoleLog');
+const STATUS_BAR = $('statusBar');
+const STATUS_TEXT = $('statusText');
+const STATUS_SPINNER = $('statusSpinner');
+const STATUS_DOT = $('statusDot');
+const TRACK_BTN = $('trackBtn');
+const GITHUB_URL = $('githubUrl');
+const PROVIDER_SEL = $('provider');
+const MODEL_INPUT = $('model');
+const API_KEY = $('apiKey');
+const CUSTOM_URL = $('customUrl');
+const CUSTOM_HEADERS = $('customHeaders');
+const CONFIG_PANEL = $('configPanel');
+const CONFIG_TOGGLE = $('configToggle');
+const CUSTOM_FIELDS = $('customFields');
+const CUSTOM_HEADERS_FIELD = $('customHeadersField');
+const RESULT_AREA = $('resultArea');
+const META_RELEASE = $('metaRelease');
+const META_PROVIDER = $('metaProvider');
+const META_PUBLISHED = $('metaPublished');
+const META_REPO = $('metaRepo');
+const BREAKING_LIST = $('breakingList');
+const FEATURES_LIST = $('featuresList');
+const DEPRECATIONS_LIST = $('deprecationsList');
+const HISTORY_BODY = $('historyBody');
+
+function log(msg, cls = '') {
+  const ts = new Date().toTimeString().slice(0, 8);
+  CONSOLE.innerHTML += `<span class="ts">[${ts}]</span> <span class="${cls}">${escapeHtml(msg)}</span>\n`;
+  CONSOLE.scrollTop = CONSOLE.scrollHeight;
+}
+
+function setStatus(type, msg) {
+  STATUS_BAR.className = 'status-bar visible ' + type;
+  STATUS_TEXT.textContent = msg;
+  STATUS_SPINNER.style.display = type === 'loading' ? '' : 'none';
+  STATUS_DOT.className = 'status-dot ' + (type === 'loading' ? 'idle' : type);
+}
+
+function dismissStatus() {
+  STATUS_BAR.className = 'status-bar';
+}
+
+function clearLog() {
+  CONSOLE.innerHTML = '';
+}
+
+function toggleConfig() {
+  const open = CONFIG_PANEL.classList.toggle('open');
+  CONFIG_TOGGLE.classList.toggle('open', open);
+}
+
+function onProviderChange() {
+  const p = PROVIDER_SEL.value;
+  MODEL_INPUT.placeholder = PROVIDER_DEFAULTS[p] || 'model (required for custom)';
+  const isCustom = p === 'custom';
+  CUSTOM_FIELDS.style.display = isCustom ? '' : 'none';
+  CUSTOM_HEADERS_FIELD.style.display = isCustom ? '' : 'none';
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function renderList(arr) {
+  if (!arr || arr.length === 0) return '<span class="empty-state">None detected</span>';
+  return '<ul>' + arr.map(i => '<li>' + escapeHtml(i) + '</li>').join('') + '</ul>';
+}
+
+function renderHistoryRow(r) {
+  const bc = r.ai_analysis?.breaking_changes;
+  const nf = r.ai_analysis?.new_features;
+  const dp = r.ai_analysis?.deprecations;
+  return '<tr>' +
+    '<td>' + new Date(r.tracked_at).toLocaleString() + '</td>' +
+    '<td><a href="' + escapeHtml(r.github_url || '#') + '" target="_blank">' + escapeHtml(r.owner) + '/' + escapeHtml(r.repo_name) + '</a></td>' +
+    '<td><code style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text)">' + escapeHtml(r.release_tag) + '</code></td>' +
+    '<td><span class="badge badge-provider">' + escapeHtml(r.provider_used) + '</span></td>' +
+    '<td>' + ((bc && bc.length) ? '<span class="badge badge-breaking">' + bc.length + '</span>' : '<span style="color:var(--text-muted)">—</span>') + '</td>' +
+    '<td>' + ((nf && nf.length) ? '<span class="badge badge-features">' + nf.length + '</span>' : '<span style="color:var(--text-muted)">—</span>') + '</td>' +
+    '<td>' + ((dp && dp.length) ? '<span class="badge badge-deprecations">' + dp.length + '</span>' : '<span style="color:var(--text-muted)">—</span>') + '</td>' +
+    '</tr>';
+}
+
+function showResult(data) {
+  const u = data.update;
+  RESULT_AREA.classList.add('visible');
+  META_RELEASE.textContent = u.release_tag;
+  META_PROVIDER.textContent = u.provider_used;
+  META_PUBLISHED.textContent = new Date(u.published_at).toLocaleString();
+  META_REPO.textContent = u.owner + '/' + u.repo_name;
+
+  const ai = u.ai_analysis || {};
+  BREAKING_LIST.innerHTML = renderList(ai.breaking_changes);
+  FEATURES_LIST.innerHTML = renderList(ai.new_features);
+  DEPRECATIONS_LIST.innerHTML = renderList(ai.deprecations);
+
+  RESULT_AREA.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function trackRepository() {
+  const url = GITHUB_URL.value.trim();
+  if (!url) { setStatus('error', 'Please enter a GitHub URL'); return; }
+  const key = API_KEY.value.trim();
+  if (!key) { setStatus('error', 'Please enter an API key'); return; }
+  const provider = PROVIDER_SEL.value;
+  const model = MODEL_INPUT.value.trim() || null;
+  const customUrl = CUSTOM_URL.value.trim() || null;
+  let customHeaders = null;
+  const hdr = CUSTOM_HEADERS.value.trim();
+  if (hdr) {
+    try { customHeaders = JSON.parse(hdr); } catch (e) { setStatus('error', 'Custom headers must be valid JSON'); return; }
+  }
+  if (provider === 'custom' && !customUrl) { setStatus('error', 'Custom endpoint URL is required'); return; }
+
+  const payload = { github_url: url, provider, api_key: key };
+  if (model) payload.model = model;
+  if (customUrl) payload.custom_url = customUrl;
+  if (customHeaders) payload.custom_headers = customHeaders;
+
+  TRACK_BTN.disabled = true;
+  TRACK_BTN.innerHTML = '<span class="status-spinner" style="width:14px;height:14px;border-color:transparent;border-top-color:#fff;display:inline-block"></span> Tracking...';
+  setStatus('loading', 'Fetching release & running AI analysis...');
+  log('Submitting request to /api/track...', 'info');
+
+  try {
+    const resp = await fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      setStatus('success', '✓ Analyzed ' + data.update.release_tag + ' via ' + data.update.provider_used);
+      log('SUCCESS — ' + data.update.release_tag + ' analyzed via ' + data.update.provider_used, 'ok');
+      showResult(data);
+      await loadHistory();
+    } else {
+      const detail = data.detail || data;
+      const msg = detail.error ? detail.error + ': ' + (detail.detail || JSON.stringify(detail)) : JSON.stringify(detail);
+      setStatus('error', msg.slice(0, 120) + (msg.length > 120 ? '…' : ''));
+      log('ERROR — ' + msg, 'err');
+    }
+  } catch (err) {
+    setStatus('error', 'Network error: ' + err.message);
+    log('ERROR — Network: ' + err.message, 'err');
+  } finally {
+    TRACK_BTN.disabled = false;
+    TRACK_BTN.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Track';
+  }
+}
+
+async function loadHistory() {
+  log('Fetching history...', 'info');
+  try {
+    const resp = await fetch('/api/history');
+    const data = await resp.json();
+    if (data.records && data.records.length > 0) {
+      HISTORY_BODY.innerHTML = data.records.map(renderHistoryRow).join('');
+      log('Retrieved ' + data.records.length + ' records.', 'ok');
+      $('statRepos').textContent = data.records.length;
+      const uniqueTags = new Set(data.records.map(r => r.release_tag)).size;
+      $('statReleases').textContent = uniqueTags;
+    } else {
+      HISTORY_BODY.innerHTML = '<tr class="empty-row"><td colspan="7">No records yet. Track a repository above.</td></tr>';
+    }
+  } catch (err) {
+    log('ERROR — History fetch failed: ' + err.message, 'err');
+  }
+}
+
+// ── keyboard shortcut ──
+GITHUB_URL.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !TRACK_BTN.disabled) trackRepository();
+});
+
+// ── init ──
+onProviderChange();
+loadHistory();
+</script>
+</body>
+</html>
