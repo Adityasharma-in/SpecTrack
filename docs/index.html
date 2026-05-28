@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpecTrack — AI-Powered Release Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0a0a0f;
+      color: #e4e4e7;
+      line-height: 1.6;
+    }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; max-width: 1100px; margin: 0 auto;
+    }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+    nav .logo span { color: #a78bfa; }
+    nav a { color: #a1a1aa; text-decoration: none; font-size: 0.9rem; transition: color .2s; }
+    nav a:hover { color: #fff; }
+
+    /* Hero */
+    .hero {
+      text-align: center; padding: 80px 0 60px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(120, 80, 200, 0.15), transparent 60%);
+    }
+    .hero h1 {
+      font-size: 3.2rem; font-weight: 800; line-height: 1.15;
+      background: linear-gradient(135deg, #c4b5fd, #818cf8, #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 16px; letter-spacing: -0.03em;
+    }
+    .hero p {
+      font-size: 1.15rem; color: #a1a1aa; max-width: 650px; margin: 0 auto 32px;
+    }
+    .hero .tagline {
+      display: inline-block; padding: 6px 16px; border-radius: 100px;
+      background: rgba(120, 80, 200, 0.15); color: #a78bfa;
+      font-size: 0.85rem; font-weight: 500; margin-bottom: 20px;
+      border: 1px solid rgba(120, 80, 200, 0.25);
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 10px; font-size: 0.95rem;
+      font-weight: 600; text-decoration: none; transition: all .2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff; border: none;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124, 58, 237, 0.35); }
+    .btn-outline {
+      border: 1px solid #27272a; color: #e4e4e7; background: transparent;
+    }
+    .btn-outline:hover { border-color: #52525b; background: rgba(255,255,255,0.03); }
+    .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* Problem */
+    .section { padding: 80px 0; }
+    .section-title { font-size: 2rem; font-weight: 700; text-align: center; margin-bottom: 48px; letter-spacing: -0.02em; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+    .card {
+      background: #12121a; border: 1px solid #1f1f2a; border-radius: 14px;
+      padding: 32px; transition: border-color .2s, transform .2s;
+    }
+    .card:hover { border-color: #2f2f3a; transform: translateY(-4px); }
+    .card-icon { width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 16px; }
+    .card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; color: #fff; }
+    .card p { font-size: 0.9rem; color: #a1a1aa; }
+
+    /* Features */
+    .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feature {
+      background: #12121a; border: 1px solid #1f1f2a; border-radius: 12px;
+      padding: 24px; text-align: center;
+    }
+    .feature h4 { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 6px; }
+    .feature p { font-size: 0.85rem; color: #a1a1aa; }
+
+    /* Flow */
+    .flow { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; padding: 20px 0; }
+    .flow-step {
+      background: #12121a; border: 1px solid #1f1f2a; border-radius: 10px;
+      padding: 16px 24px; text-align: center; min-width: 120px;
+    }
+    .flow-step .num { color: #a78bfa; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; }
+    .flow-step .label { color: #fff; font-weight: 500; font-size: 0.9rem; margin-top: 4px; }
+    .flow-arrow { color: #3f3f4a; font-size: 1.4rem; }
+
+    /* Arch */
+    .arch {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      flex-wrap: wrap; padding: 32px 0;
+    }
+    .arch-box {
+      background: #12121a; border: 1px solid #1f1f2a; border-radius: 10px;
+      padding: 20px 28px; text-align: center;
+    }
+    .arch-box .name { font-size: 0.85rem; color: #a78bfa; font-weight: 600; margin-bottom: 4px; }
+    .arch-box .desc { font-size: 0.8rem; color: #a1a1aa; }
+    .arch-arrow { color: #3f3f4a; font-size: 1.2rem; }
+
+    /* CTA */
+    .cta {
+      text-align: center; padding: 80px 0;
+      background: radial-gradient(ellipse at 50% 100%, rgba(120, 80, 200, 0.1), transparent 50%);
+    }
+    .cta h2 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+    .cta p { color: #a1a1aa; margin-bottom: 28px; max-width: 500px; margin-left: auto; margin-right: auto; }
+
+    /* Footer */
+    footer {
+      text-align: center; padding: 32px 0; border-top: 1px solid #1f1f2a;
+      color: #52525b; font-size: 0.85rem;
+    }
+    footer a { color: #a1a1aa; text-decoration: none; }
+    footer a:hover { color: #fff; }
+
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 2.2rem; }
+      .cards, .feature-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">Spec<span>Track</span></div>
+    <a href="https://github.com/Adityasharma-in/SpecTrack">GitHub →</a>
+  </nav>
+
+  <section class="hero">
+    <div class="container">
+      <div class="tagline">🚀 AI-Powered Dependency Intelligence</div>
+      <h1>Stop reading changelogs.<br>Let AI do the work.</h1>
+      <p>SpecTrack ingests any GitHub repository's latest release, analyzes it through your chosen AI model, and returns structured intelligence — breaking changes, new features, and deprecations — in under 10 seconds.</p>
+      <div class="hero-buttons">
+        <a class="btn btn-primary" href="https://github.com/Adityasharma-in/SpecTrack#quick-start">Try It Now</a>
+        <a class="btn btn-outline" href="https://github.com/Adityasharma-in/SpecTrack">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">The Problem</h2>
+      <div class="cards">
+        <div class="card">
+          <div class="card-icon" style="background:rgba(239,68,68,0.12);color:#ef4444;">⚠</div>
+          <h3>Silent Breaking Updates</h3>
+          <p>A renamed export, changed default, or removed API silently breaks your build during CI or deploy — not when the release ships. No structured record exists to alert you.</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b;">📖</div>
+          <h3>Changelog Fatigue</h3>
+          <p>With 50+ dependencies, reading every changelog is unsustainable. Formats range from precise to completely unstructured. Teams either ignore changelogs (risk) or spend hours reading (cost).</p>
+        </div>
+        <div class="card">
+          <div class="card-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6;">✦</div>
+          <h3>Missed Feature Leverage</h3>
+          <p>3x faster rendering, native connection pooling, simpler APIs — improvements sit in changelogs no one reads. Your team misses out not by choice, but by lack of awareness.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <h2 class="section-title">How It Works</h2>
+      <div class="flow">
+        <div class="flow-step"><div class="num">Step 1</div><div class="label">Submit Repo URL</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="num">Step 2</div><div class="label">Fetch Release + Commits</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="num">Step 3</div><div class="label">AI Analyzes Changes</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step"><div class="num">Step 4</div><div class="label">Structured JSON Output</div></div>
+      </div>
+      <div style="text-align:center;margin-top:40px;">
+        <div style="display:inline-block;background:#12121a;border:1px solid #1f1f2a;border-radius:10px;padding:20px 32px;">
+          <pre style="color:#a78bfa;font-size:0.85rem;text-align:left;font-family:monospace;">{
+  "breaking_changes": ["..."],
+  "new_features": ["..."],
+  "deprecations": ["..."]
+}</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <h2 class="section-title">Features</h2>
+      <div class="feature-grid">
+        <div class="feature"><h4>Multi-Provider AI</h4><p>BYOK to Gemini, OpenAI, Claude, OpenRouter or any OpenAI-compatible endpoint</p></div>
+        <div class="feature"><h4>Commit Enrichment</h4><p>Auto-fetches commits between releases for richer analysis context</p></div>
+        <div class="feature"><h4>Historical Tracking</h4><p>Every analysis is persisted with timestamps and full history view</p></div>
+        <div class="feature"><h4>Smart Categorization</h4><p>Classifies by functional consequence, not keyword matching</p></div>
+        <div class="feature"><h4>Clerk Auth</h4><p>Secure user-scoped access to all tracked repositories</p></div>
+        <div class="feature"><h4>REST API</h4><p>Simple POST endpoint returns structured JSON in seconds</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <h2 class="section-title">Architecture</h2>
+      <div class="arch">
+        <div class="arch-box"><div class="name">Browser</div><div class="desc">React / Vanilla JS</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="name">FastAPI</div><div class="desc">Python Server</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="name">GitHub API</div><div class="desc">Release + Compare</div></div>
+      </div>
+      <div class="arch">
+        <div class="arch-box" style="min-width:200px;"><div class="name">AI Router</div><div class="desc">Gemini · OpenAI · Claude · OpenRouter · Custom</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box"><div class="name">Supabase</div><div class="desc">PostgreSQL Storage</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="container">
+      <h2>Ready to stop reading changelogs?</h2>
+      <p>Self-host in minutes. Your API keys. Your choice of AI. Zero vendor lock-in.</p>
+      <a class="btn btn-primary" href="https://github.com/Adityasharma-in/SpecTrack#quick-start">Get Started →</a>
+    </div>
+  </section>
+
+  <footer>
+    Built by <a href="https://github.com/Adityasharma-in">Aditya Sharma</a> &middot;
+    <a href="https://github.com/Adityasharma-in/SpecTrack">SpecTrack on GitHub</a>
+  </footer>
+</body>
+</html>
