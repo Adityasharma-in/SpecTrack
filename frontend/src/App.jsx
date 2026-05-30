@@ -17,6 +17,16 @@ const PROVIDER_DEFAULTS = {
   custom: "",
 };
 
+function _loadCred(key, fallback) {
+  try {
+    if (localStorage.getItem("spectrack_remember") === "true") {
+      const s = JSON.parse(localStorage.getItem("spectrack_credentials") || "{}");
+      return s[key] ?? fallback;
+    }
+  } catch {}
+  return fallback;
+}
+
 export default function App({ clerkEnabled }) {
   if (!clerkEnabled) {
     return <DashboardNoAuth />;
@@ -248,11 +258,14 @@ function Dashboard() {
   const { user } = useUser();
   const navigate = useNavigate();
 
-  const [provider, setProvider] = useState("gemini");
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("");
-  const [customUrl, setCustomUrl] = useState("");
-  const [customHeaders, setCustomHeaders] = useState("");
+  const [remember, setRemember] = useState(() => {
+    try { return localStorage.getItem("spectrack_remember") === "true"; } catch { return false; }
+  });
+  const [provider, setProvider] = useState(() => _loadCred("provider", "gemini"));
+  const [apiKey, setApiKey] = useState(() => _loadCred("apiKey", ""));
+  const [model, setModel] = useState(() => _loadCred("model", ""));
+  const [customUrl, setCustomUrl] = useState(() => _loadCred("customUrl", ""));
+  const [customHeaders, setCustomHeaders] = useState(() => _loadCred("customHeaders", ""));
   const [githubUrl, setGithubUrl] = useState("");
   const [logs, setLogs] = useState([]);
   const [latestResult, setLatestResult] = useState(null);
@@ -301,6 +314,20 @@ function Dashboard() {
     const def = PROVIDER_DEFAULTS[provider] || "";
     setModel((prev) => prev || def);
   }, [provider]);
+
+  useEffect(() => {
+    try {
+      if (remember) {
+        localStorage.setItem("spectrack_credentials", JSON.stringify({
+          provider, apiKey, model, customUrl, customHeaders
+        }));
+        localStorage.setItem("spectrack_remember", "true");
+      } else {
+        localStorage.removeItem("spectrack_credentials");
+        localStorage.removeItem("spectrack_remember");
+      }
+    } catch {}
+  }, [remember, provider, apiKey, model, customUrl, customHeaders]);
 
   async function handleTrack() {
     if (!githubUrl.trim()) { log("Please enter a GitHub URL", "err"); return; }
@@ -432,6 +459,38 @@ function Dashboard() {
                         className="w-full bg-cyber-darker border border-cyber-border rounded-lg px-3 py-2.5 text-sm text-cyber-text font-mono resize-none focus:outline-none focus:border-cyber-cyan/60 focus:glow transition-all duration-200" />
                     </div>
                   </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-cyber-border/40">
+                <div className="flex items-center gap-2.5">
+                  <button
+                    role="switch"
+                    aria-checked={remember}
+                    onClick={() => {
+                      const next = !remember;
+                      setRemember(next);
+                      if (!next) {
+                        try {
+                          localStorage.removeItem("spectrack_credentials");
+                          localStorage.removeItem("spectrack_remember");
+                        } catch {}
+                      }
+                    }}
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${
+                      remember ? "bg-cyber-cyan/30" : "bg-cyber-darker border border-cyber-border"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all duration-200 ${
+                      remember ? "translate-x-5 bg-cyber-cyan" : "translate-x-0 bg-cyber-muted/50"
+                    }`} />
+                  </button>
+                  <span className="text-xs text-cyber-muted">Save credentials</span>
+                </div>
+                {remember && (
+                  <span className="text-[10px] text-cyber-emerald px-1.5 py-0.5 rounded bg-cyber-emerald/10 border border-cyber-emerald/20 animate-fade-in">
+                    Saved
+                  </span>
                 )}
               </div>
             </div>
@@ -567,11 +626,14 @@ function Dashboard() {
 /* ====== DASHBOARD (no auth fallback) ====== */
 function DashboardNoAuth() {
   // Original single-page behavior when Clerk is not configured
-  const [provider, setProvider] = useState("gemini");
-  const [apiKey, setApiKey] = useState("");
-  const [model, setModel] = useState("");
-  const [customUrl, setCustomUrl] = useState("");
-  const [customHeaders, setCustomHeaders] = useState("");
+  const [remember, setRemember] = useState(() => {
+    try { return localStorage.getItem("spectrack_remember") === "true"; } catch { return false; }
+  });
+  const [provider, setProvider] = useState(() => _loadCred("provider", "gemini"));
+  const [apiKey, setApiKey] = useState(() => _loadCred("apiKey", ""));
+  const [model, setModel] = useState(() => _loadCred("model", ""));
+  const [customUrl, setCustomUrl] = useState(() => _loadCred("customUrl", ""));
+  const [customHeaders, setCustomHeaders] = useState(() => _loadCred("customHeaders", ""));
   const [githubUrl, setGithubUrl] = useState("");
   const [logs, setLogs] = useState([]);
   const [latestResult, setLatestResult] = useState(null);
@@ -608,6 +670,20 @@ function DashboardNoAuth() {
     const def = PROVIDER_DEFAULTS[provider] || "";
     setModel((prev) => prev || def);
   }, [provider]);
+
+  useEffect(() => {
+    try {
+      if (remember) {
+        localStorage.setItem("spectrack_credentials", JSON.stringify({
+          provider, apiKey, model, customUrl, customHeaders
+        }));
+        localStorage.setItem("spectrack_remember", "true");
+      } else {
+        localStorage.removeItem("spectrack_credentials");
+        localStorage.removeItem("spectrack_remember");
+      }
+    } catch {}
+  }, [remember, provider, apiKey, model, customUrl, customHeaders]);
 
   async function handleTrack() {
     if (!githubUrl.trim()) { log("Please enter a GitHub URL", "err"); return; }
@@ -720,6 +796,38 @@ function DashboardNoAuth() {
                         className="w-full bg-cyber-darker border border-cyber-border rounded-lg px-3 py-2.5 text-sm text-cyber-text font-mono resize-none focus:outline-none focus:border-cyber-cyan/60 focus:glow transition-all duration-200" />
                     </div>
                   </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between pt-4 mt-4 border-t border-cyber-border/40">
+                <div className="flex items-center gap-2.5">
+                  <button
+                    role="switch"
+                    aria-checked={remember}
+                    onClick={() => {
+                      const next = !remember;
+                      setRemember(next);
+                      if (!next) {
+                        try {
+                          localStorage.removeItem("spectrack_credentials");
+                          localStorage.removeItem("spectrack_remember");
+                        } catch {}
+                      }
+                    }}
+                    className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${
+                      remember ? "bg-cyber-cyan/30" : "bg-cyber-darker border border-cyber-border"
+                    }`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all duration-200 ${
+                      remember ? "translate-x-5 bg-cyber-cyan" : "translate-x-0 bg-cyber-muted/50"
+                    }`} />
+                  </button>
+                  <span className="text-xs text-cyber-muted">Save credentials</span>
+                </div>
+                {remember && (
+                  <span className="text-[10px] text-cyber-emerald px-1.5 py-0.5 rounded bg-cyber-emerald/10 border border-cyber-emerald/20 animate-fade-in">
+                    Saved
+                  </span>
                 )}
               </div>
             </div>
