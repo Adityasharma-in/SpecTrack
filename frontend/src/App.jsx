@@ -10,11 +10,15 @@ import {
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const PROVIDER_DEFAULTS = {
-  gemini: "gemini-1.5-flash",
+  gemini: "gemini-2.0-flash-lite",
   openai: "gpt-4o-mini",
-  claude: "claude-haiku-4-5-20251001",
-  openrouter: "google/gemini-flash-1.5",
-  custom: "",
+  claude: "claude-sonnet-4-20250514",
+  openrouter: "openai/gpt-4o-mini",
+  nvidia_nim: "nvidia/llama-3.1-70b-instruct",
+  mistral: "mistral-small-latest",
+  groq: "llama-3.3-70b-versatile",
+  together: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+  deepseek: "deepseek-chat",
 };
 
 function _loadCred(key, fallback) {
@@ -431,7 +435,11 @@ function Dashboard() {
                     <option value="openai">OpenAI</option>
                     <option value="claude">Claude (Anthropic)</option>
                     <option value="openrouter">OpenRouter</option>
-                    <option value="custom">Custom Endpoint</option>
+                    <option value="nvidia_nim">NVIDIA NIM</option>
+                    <option value="mistral">Mistral</option>
+                    <option value="groq">Groq</option>
+                    <option value="together">Together AI</option>
+                    <option value="deepseek">DeepSeek</option>
                   </select>
                 </div>
                 <div>
@@ -445,21 +453,8 @@ function Dashboard() {
                     placeholder={PROVIDER_DEFAULTS[provider] || "model id"}
                     className="w-full bg-cyber-darker border border-cyber-border rounded-lg px-3 py-2.5 text-sm text-cyber-text font-mono focus:outline-none focus:border-cyber-cyan/60 focus:glow transition-all duration-200" />
                 </div>
-                {provider === "custom" && (
-                  <>
-                    <div>
-                      <label className="block text-xs text-cyber-muted mb-1.5 uppercase tracking-wider">Custom URL</label>
-                      <input type="url" value={customUrl} onChange={(e) => setCustomUrl(e.target.value)} placeholder="https://..."
-                        className="w-full bg-cyber-darker border border-cyber-border rounded-lg px-3 py-2.5 text-sm text-cyber-text font-mono focus:outline-none focus:border-cyber-cyan/60 focus:glow transition-all duration-200" />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-cyber-muted mb-1.5 uppercase tracking-wider">Custom Headers <span className="text-cyber-muted/50">(JSON)</span></label>
-                      <textarea rows={2} value={customHeaders} onChange={(e) => setCustomHeaders(e.target.value)}
-                        placeholder='{"X-Key": "val"}'
-                        className="w-full bg-cyber-darker border border-cyber-border rounded-lg px-3 py-2.5 text-sm text-cyber-text font-mono resize-none focus:outline-none focus:border-cyber-cyan/60 focus:glow transition-all duration-200" />
-                    </div>
-                  </>
-                )}
+
+
               </div>
 
               <div className="flex items-center justify-between pt-4 mt-4 border-t border-cyber-border/40">
@@ -769,7 +764,11 @@ function DashboardNoAuth() {
                     <option value="openai">OpenAI</option>
                     <option value="claude">Claude (Anthropic)</option>
                     <option value="openrouter">OpenRouter</option>
-                    <option value="custom">Custom Endpoint</option>
+                    <option value="nvidia_nim">NVIDIA NIM</option>
+                    <option value="mistral">Mistral</option>
+                    <option value="groq">Groq</option>
+                    <option value="together">Together AI</option>
+                    <option value="deepseek">DeepSeek</option>
                   </select>
                 </div>
                 <div>

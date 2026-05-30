@@ -38,7 +38,7 @@ async def validate_env():
         print(f"⚠  Missing environment variables: {', '.join(missing)}. DB features will fail.")
 
 
-VALID_PROVIDERS = {"gemini", "openai", "claude", "openrouter", "custom"}
+VALID_PROVIDERS = {"gemini", "openai", "claude", "openrouter", "nvidia_nim", "mistral", "groq", "together", "deepseek"}
 
 
 class TrackRequest(BaseModel):

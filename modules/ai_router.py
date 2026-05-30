@@ -45,7 +45,7 @@ JSON output format:
 
 @dataclass
 class AIRouterRequest:
-    provider: Literal["gemini", "openai", "claude", "openrouter", "custom"]
+    provider: Literal["gemini", "openai", "claude", "openrouter", "nvidia_nim", "mistral", "groq", "together", "deepseek"]
     api_key: str
     model: str | None
     release_body: str
@@ -74,6 +74,20 @@ PROVIDER_DEFAULTS = {
     "openai": "gpt-4o-mini",
     "claude": "claude-sonnet-4-20250514",
     "openrouter": "openai/gpt-4o-mini",
+    "nvidia_nim": "nvidia/llama-3.1-70b-instruct",
+    "mistral": "mistral-small-latest",
+    "groq": "llama-3.3-70b-versatile",
+    "together": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "deepseek": "deepseek-chat",
+}
+
+PROVIDER_URLS = {
+    "openrouter": "https://openrouter.ai/api/v1",
+    "nvidia_nim": "https://integrate.api.nvidia.com/v1",
+    "mistral": "https://api.mistral.ai/v1",
+    "groq": "https://api.groq.com/openai/v1",
+    "together": "https://api.together.xyz/v1",
+    "deepseek": "https://api.deepseek.com/v1",
 }
 
 
@@ -279,63 +293,15 @@ async def _call_claude(req: AIRouterRequest) -> AIRouterResponse:
     return result
 
 
-async def _call_openrouter(req: AIRouterRequest) -> AIRouterResponse:
-    model = req.model or PROVIDER_DEFAULTS["openrouter"]
-    url = "https://openrouter.ai/api/v1/chat/completions"
+async def _call_openai_compatible(req: AIRouterRequest) -> AIRouterResponse:
+    model = req.model or PROVIDER_DEFAULTS.get(req.provider, "default")
+    base_url = PROVIDER_URLS[req.provider]
+    url = f"{base_url}/chat/completions"
     payload = {
         "model": model,
         "temperature": 0.0,
         "max_tokens": 4096,
         "response_format": {"type": "json_object"},
-        "messages": [
-            {"role": "user", "content": _openrouter_message(req.release_body)},
-        ],
-    }
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {req.api_key}",
-        "HTTP-Referer": "https://spectrack.dev",
-        "X-Title": "SpecTrack",
-    }
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            resp = await client.post(url, json=payload, headers=headers)
-        except httpx.RequestError as exc:
-            raise AIRoutingError("openrouter", f"Request failed: {exc}")
-    if resp.status_code >= 400:
-        resp_body = resp.text[:500].lower()
-        if "not supported" in resp_body or "unsupported" in resp_body or "invalid" in resp_body:
-            payload.pop("response_format", None)
-            async with httpx.AsyncClient(timeout=30.0) as client2:
-                resp2 = await client2.post(url, json=payload, headers=headers)
-            if resp2.status_code >= 400:
-                raise AIRoutingError("openrouter", f"API returned {resp2.status_code}: {resp2.text[:300]}", resp2.status_code)
-            try:
-                data = resp2.json()
-            except json.JSONDecodeError:
-                raise AIRoutingError("openrouter", f"Non-JSON response on retry: {resp2.text[:200]}")
-        else:
-            raise AIRoutingError("openrouter", f"API returned {resp.status_code}: {resp.text[:300]}", resp.status_code)
-    else:
-        try:
-            data = resp.json()
-        except json.JSONDecodeError:
-            raise AIRoutingError("openrouter", f"Non-JSON response: {resp.text[:200]}")
-    raw_text = _extract_text("openrouter", data)
-    result = _parse_ai_response(raw_text)
-    result.model_used = model
-    return result
-
-
-async def _call_custom(req: AIRouterRequest) -> AIRouterResponse:
-    if not req.custom_url or not req.custom_url.startswith("https://"):
-        raise AIRoutingError("custom", "Custom endpoint URL must be a valid HTTPS URL")
-    model = req.model or "default"
-    url = req.custom_url
-    payload = {
-        "model": model,
-        "temperature": 0.0,
-        "max_tokens": 4096,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": _user_message(req.release_body)},
@@ -345,21 +311,31 @@ async def _call_custom(req: AIRouterRequest) -> AIRouterResponse:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {req.api_key}",
     }
-    if req.custom_headers:
-        headers.update(req.custom_headers)
-        headers["Content-Type"] = "application/json"
     async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             resp = await client.post(url, json=payload, headers=headers)
         except httpx.RequestError as exc:
-            raise AIRoutingError("custom", f"Request failed: {exc}")
+            raise AIRoutingError(req.provider, f"Request failed: {exc}")
     if resp.status_code >= 400:
-        raise AIRoutingError("custom", f"API returned {resp.status_code}: {resp.text[:300]}", resp.status_code)
-    try:
-        data = resp.json()
-    except json.JSONDecodeError:
-        raise AIRoutingError("custom", f"Non-JSON response: {resp.text[:200]}")
-    raw_text = _extract_text("custom", data)
+        resp_body = resp.text[:500].lower()
+        if "not supported" in resp_body or "unsupported" in resp_body or "invalid" in resp_body:
+            payload.pop("response_format", None)
+            async with httpx.AsyncClient(timeout=30.0) as client2:
+                resp2 = await client2.post(url, json=payload, headers=headers)
+            if resp2.status_code >= 400:
+                raise AIRoutingError(req.provider, f"API returned {resp2.status_code}: {resp2.text[:300]}", resp2.status_code)
+            try:
+                data = resp2.json()
+            except json.JSONDecodeError:
+                raise AIRoutingError(req.provider, f"Non-JSON response on retry: {resp2.text[:200]}")
+        else:
+            raise AIRoutingError(req.provider, f"API returned {resp.status_code}: {resp.text[:300]}", resp.status_code)
+    else:
+        try:
+            data = resp.json()
+        except json.JSONDecodeError:
+            raise AIRoutingError(req.provider, f"Non-JSON response: {resp.text[:200]}")
+    raw_text = _extract_text(req.provider, data)
     result = _parse_ai_response(raw_text)
     result.model_used = model
     return result
@@ -369,8 +345,12 @@ PROVIDER_MAP = {
     "gemini": _call_gemini,
     "openai": _call_openai,
     "claude": _call_claude,
-    "openrouter": _call_openrouter,
-    "custom": _call_custom,
+    "openrouter": _call_openai_compatible,
+    "nvidia_nim": _call_openai_compatible,
+    "mistral": _call_openai_compatible,
+    "groq": _call_openai_compatible,
+    "together": _call_openai_compatible,
+    "deepseek": _call_openai_compatible,
 }
 
 
