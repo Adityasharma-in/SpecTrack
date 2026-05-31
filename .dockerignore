@@ -1,0 +1,14 @@
+ve/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.git/
+.gitignore
+node_modules/
+*.log
+*.err
+server_out.txt
+server_err.txt
+docs/
+*.md
