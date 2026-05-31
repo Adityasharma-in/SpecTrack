@@ -130,9 +130,12 @@ async def fetch_latest_release(owner: str, repo_name: str) -> dict:
             )
         if response.status_code == 403:
             retry_after = response.headers.get("Retry-After", "unknown")
+            hint = ""
+            if not token:
+                hint = " Set GITHUB_TOKEN in your environment to increase the limit from 60 to 5000 req/hr."
             raise GitHubError(
                 "RATE_LIMITED",
-                f"GitHub API rate limit exceeded. Retry after {retry_after}",
+                f"GitHub API rate limit exceeded. Retry after {retry_after}.{hint}",
                 status_code=429,
             )
         if response.status_code == 422:
