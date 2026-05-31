@@ -8,3 +8,4 @@ server_out.txt
 server_err.txt
 frontend/dist/
 node_modules/
+.github/workflows/deploy-pages.yml

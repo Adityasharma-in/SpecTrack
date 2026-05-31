@@ -196,17 +196,18 @@ async def _call_gemini(req: AIRouterRequest) -> AIRouterResponse:
         "contents": [{"role": "user", "parts": [{"text": _user_message(req.release_body)}]}],
         "generationConfig": {"temperature": 0.0, "maxOutputTokens": 4096, "response_mime_type": "application/json"},
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0, limits=httpx.Limits(max_keepalive_connections=5)) as client:
         try:
             resp = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
         except httpx.RequestError as exc:
-            raise AIRoutingError("gemini", f"Request failed: {exc}")
+            err = str(exc) or repr(exc) or "unknown error"
+            raise AIRoutingError("gemini", f"Request failed: {err}")
     if resp.status_code >= 400:
         resp_body = resp.text[:500]
         if "not supported" in resp_body.lower() or "unsupported" in resp_body.lower():
             payload.pop("generationConfig", None)
             payload["generationConfig"] = {"temperature": 0.0, "maxOutputTokens": 4096}
-            async with httpx.AsyncClient(timeout=30.0) as client2:
+            async with httpx.AsyncClient(timeout=60.0, limits=httpx.Limits(max_keepalive_connections=5)) as client2:
                 resp2 = await client2.post(url, json=payload, headers={"Content-Type": "application/json"})
             if resp2.status_code >= 400:
                 raise AIRoutingError("gemini", f"API returned {resp2.status_code}: {resp2.text[:300]}", resp2.status_code)
@@ -244,11 +245,12 @@ async def _call_openai(req: AIRouterRequest) -> AIRouterResponse:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {req.api_key}",
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0, limits=httpx.Limits(max_keepalive_connections=5)) as client:
         try:
             resp = await client.post(url, json=payload, headers=headers)
         except httpx.RequestError as exc:
-            raise AIRoutingError("openai", f"Request failed: {exc}")
+            err = str(exc) or repr(exc) or "unknown error"
+            raise AIRoutingError("openai", f"Request failed: {err}")
     if resp.status_code >= 400:
         raise AIRoutingError("openai", f"API returned {resp.status_code}: {resp.text[:300]}", resp.status_code)
     try:
@@ -276,11 +278,12 @@ async def _call_claude(req: AIRouterRequest) -> AIRouterResponse:
         "x-api-key": req.api_key,
         "anthropic-version": "2023-06-01",
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0, limits=httpx.Limits(max_keepalive_connections=5)) as client:
         try:
             resp = await client.post(url, json=payload, headers=headers)
         except httpx.RequestError as exc:
-            raise AIRoutingError("claude", f"Request failed: {exc}")
+            err = str(exc) or repr(exc) or "unknown error"
+            raise AIRoutingError("claude", f"Request failed: {err}")
     if resp.status_code >= 400:
         raise AIRoutingError("claude", f"API returned {resp.status_code}: {resp.text[:300]}", resp.status_code)
     try:
@@ -311,16 +314,17 @@ async def _call_openai_compatible(req: AIRouterRequest) -> AIRouterResponse:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {req.api_key}",
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=60.0, limits=httpx.Limits(max_keepalive_connections=5)) as client:
         try:
             resp = await client.post(url, json=payload, headers=headers)
         except httpx.RequestError as exc:
-            raise AIRoutingError(req.provider, f"Request failed: {exc}")
+            err = str(exc) or repr(exc) or "unknown error"
+            raise AIRoutingError(req.provider, f"Request failed: {err}")
     if resp.status_code >= 400:
         resp_body = resp.text[:500].lower()
         if "not supported" in resp_body or "unsupported" in resp_body or "invalid" in resp_body:
             payload.pop("response_format", None)
-            async with httpx.AsyncClient(timeout=30.0) as client2:
+            async with httpx.AsyncClient(timeout=60.0, limits=httpx.Limits(max_keepalive_connections=5)) as client2:
                 resp2 = await client2.post(url, json=payload, headers=headers)
             if resp2.status_code >= 400:
                 raise AIRoutingError(req.provider, f"API returned {resp2.status_code}: {resp2.text[:300]}", resp2.status_code)
