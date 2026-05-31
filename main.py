@@ -169,6 +169,11 @@ async def get_me(user_id: str = Depends(require_user)):
     return {"user_id": user_id}
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 @app.get("/")
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str = ""):
